@@ -1,0 +1,48 @@
+services:
+  backend:
+    build: ./app
+    command: gunicorn killnet73.wsgi:application --bind 0.0.0.0:8002
+    volumes:
+      - static_volume:/home/app/web/static
+      - media_volume:/home/app/web/media
+    env_file:
+      - ./.env
+    ports:
+      - '8002:8002'
+    depends_on:
+      - db
+    networks:
+      - app_network
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: "ailab_db"
+      POSTGRES_USER: "luxar"
+      POSTGRES_PASSWORD: "sYst3m0ps"
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    networks:
+      - app_network
+  nginx:
+   image: 'jc21/nginx-proxy-manager:latest'
+   restart: unless-stopped
+   ports:
+     - '80:80'
+     - '81:81'
+     - '443:443'
+   volumes:
+     - ./data:/data
+     - ./letsencrypt:/etc/letsencrypt
+     - static_volume:/home/app/web/backend_static
+     - media_volume:/home/app/web/backend_media
+  networks:
+     - app_network
+
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+networks:
+  app_network:
